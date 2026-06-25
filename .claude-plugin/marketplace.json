@@ -1,0 +1,13 @@
+{
+  "name": "compaction-watch",
+  "owner": {
+    "name": "Julian Gomez"
+  },
+  "plugins": [
+    {
+      "name": "compaction-watch",
+      "source": "./plugins/compaction-watch",
+      "description": "Cuenta las compactaciones de la sesion y avisa en el statusline al superar un umbral."
+    }
+  ]
+}

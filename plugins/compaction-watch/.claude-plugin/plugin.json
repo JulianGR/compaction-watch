@@ -1,0 +1,17 @@
+{
+  "name": "compaction-watch",
+  "version": "0.1.0",
+  "description": "Cuenta las compactaciones de la sesion actual y avisa en el statusline cuando se supera un umbral, para recordar abrir una sesion nueva antes de que la perdida acumulada por compactaciones degrade la calidad.",
+  "author": {
+    "name": "Julian Gomez"
+  },
+  "keywords": [
+    "compaction",
+    "statusline",
+    "context",
+    "hooks",
+    "session"
+  ],
+  "license": "MIT",
+  "hooks": "./hooks/hooks.json"
+}
