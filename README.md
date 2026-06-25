@@ -1,173 +1,176 @@
 # compaction-watch
 
-Plugin de hooks para Claude Code que **cuenta las compactaciones de la sesion
-actual** y, al superar un umbral, muestra un aviso en el **statusline** para
-recordarte abrir una sesion nueva antes de que la perdida acumulada por
-compactaciones degrade la calidad.
+Claude Code hooks plugin that **counts the compactions of the current
+session** and, once a threshold is exceeded, shows a warning in the
+**statusline** to remind you to open a fresh session before the loss
+accumulated by compactions degrades quality.
 
-Cada compactacion resume y descarta parte del historial: es una operacion con
-perdida (lossy) y se encadena. Varias compactaciones equivalen a "resumen de un
-resumen". `compaction-watch` no intenta medir calidad ni recuperar lo perdido;
-usa un proxy honesto y determinista: **el numero de compactaciones acumuladas**.
+Each compaction summarizes and discards part of the history: it is a lossy
+operation and it chains. Several compactions amount to a "summary of a
+summary". `compaction-watch` does not try to measure quality or recover what
+was lost; it uses an honest, deterministic proxy: **the number of accumulated
+compactions**.
 
-Sin red, sin telemetria, sin daemon. Todo el estado son ficheros pequenos bajo
+No network, no telemetry, no daemon. All state is small files under
 `~/.claude/state/compaction-watch/`.
 
-## Como se ve
+## What it looks like
 
-El statusline base (el tuyo, o uno minimo de modelo + carpeta) con un sufijo:
+The base statusline (your own, or a minimal one of model + folder) with a suffix:
 
 ```
-Opus  mi-proyecto                                         (0 compactaciones)
-Opus  mi-proyecto  ⟳3                                     (por debajo del umbral)
-Opus  mi-proyecto  ⚠️ 10 compactaciones · nueva sesión recomendada
+Opus  my-project                                         (0 compactions)
+Opus  my-project  ⟳3                                     (below the threshold)
+Opus  my-project  ⚠️ 10 compactions · new session recommended
 ```
 
-- `⟳N` aparece desde la primera compactacion (recordatorio ambiental).
-- `⚠️ ...` es el aviso fuerte al alcanzar el umbral (por defecto 10).
+- `⟳N` appears from the first compaction (ambient reminder).
+- `⚠️ ...` is the strong warning when the threshold is reached (default 10).
 
-## Instalacion
+## Installation
 
-Hay dos metodos. El statusline **siempre** requiere una entrada `statusLine` en
-`~/.claude/settings.json` (un plugin de Claude Code no puede declararla por si
-mismo). Por eso `statusline.sh` se copia a una ruta estable
-(`~/.claude/scripts/compaction-watch/`) y `settings.json` la referencia con ruta
-absoluta. La copia la rehace el hook `SessionStart` en cada arranque, asi que la
-ruta estable siempre tiene la version vigente aunque actualices el plugin.
+There are two methods. The statusline **always** requires a `statusLine` entry in
+`~/.claude/settings.json` (a Claude Code plugin cannot declare it by itself).
+That is why `statusline.sh` is copied to a stable path
+(`~/.claude/scripts/compaction-watch/`) and `settings.json` references it with an
+absolute path. The copy is remade by the `SessionStart` hook on every startup, so
+the stable path always has the current version even if you update the plugin.
 
-### Metodo A — `install.sh` (recomendado, todo en uno)
+### Method A — `install.sh` (recommended, all in one)
 
 ```bash
 ./install.sh
 ```
 
-Es **aditivo e idempotente**: copia los scripts a la ruta estable y fusiona en
-`~/.claude/settings.json` los hooks `PreCompact` y `SessionStart` y el
-`statusLine`. No reemplaza el fichero y no duplica hooks si lo ejecutas varias
-veces. Si ya tenias un `statusLine`, **lo conserva** e imprime como encadenarlo
-con `COMPACTION_WATCH_BASE_STATUSLINE`. Si no hay `jq`, imprime el bloque exacto
-para pegar a mano.
+It is **additive and idempotent**: it copies the scripts to the stable path and
+merges the `PreCompact` and `SessionStart` hooks and the `statusLine` into
+`~/.claude/settings.json`. It does not replace the file and does not duplicate
+hooks if you run it several times. If you already had a `statusLine`, it **keeps
+it** and prints how to chain it with `COMPACTION_WATCH_BASE_STATUSLINE`. If there
+is no `jq`, it prints the exact block to paste by hand.
 
-### Metodo B — plugin via marketplace
+### Method B — plugin via marketplace
 
-Anade el marketplace y activa el plugin (registra los hooks `PreCompact` y
-`SessionStart`):
+Add the marketplace and enable the plugin (registers the `PreCompact` and
+`SessionStart` hooks):
 
 ```
 /plugin marketplace add JulianGR/compaction-watch
 /plugin install compaction-watch@compaction-watch
 ```
 
-Luego, **una sola vez**, anade el statusLine a `~/.claude/settings.json`
-(usa tu ruta real de HOME ya expandida):
+Then, **once only**, add the statusLine to `~/.claude/settings.json`
+(use your real, already-expanded HOME path):
 
 ```json
 {
   "statusLine": {
     "type": "command",
-    "command": "/Users/tu-usuario/.claude/scripts/compaction-watch/statusline.sh"
+    "command": "/Users/your-user/.claude/scripts/compaction-watch/statusline.sh"
   }
 }
 ```
 
-El script ya estara en esa ruta porque `prune.sh` (hook `SessionStart`) lo copia
-en cada arranque.
+The script will already be at that path because `prune.sh` (the `SessionStart`
+hook) copies it on every startup.
 
-## Configuracion
+## Configuration
 
-Variables de entorno (se ponen en el bloque `env` de `~/.claude/settings.json`):
+Environment variables (set them in the `env` block of `~/.claude/settings.json`):
 
-| Variable | Default | Efecto |
+| Variable | Default | Effect |
 | --- | --- | --- |
-| `COMPACTION_WATCH_THRESHOLD` | `10` | Compactaciones a partir de las cuales se muestra el aviso ⚠️. Rango sensato 8-15; no pasar de 20. |
-| `COMPACTION_WATCH_AUTO_ONLY` | `0` | Si `1`, ignora los `/compact` manuales y solo cuenta los automaticos. |
-| `COMPACTION_WATCH_BASE_STATUSLINE` | (vacio) | Ruta a un statusline previo a encadenar. Si vacio, se usa uno minimo (modelo + carpeta). |
-| `COMPACTION_WATCH_RETENTION_DAYS` | `7` | Dias que se conservan los contadores de sesiones viejas antes de purgarlos. |
-| `COMPACTION_WATCH_DEBUG` | `0` | Si `1`, vuelca el stdin crudo de cada hook a `~/.claude/state/compaction-watch/raw.log` para verificar los nombres de campo del JSON. |
+| `COMPACTION_WATCH_THRESHOLD` | `10` | Number of compactions from which the ⚠️ warning is shown. Sensible range 8-15; do not go past 20. |
+| `COMPACTION_WATCH_AUTO_ONLY` | `0` | If `1`, ignores manual `/compact` calls and only counts automatic ones. |
+| `COMPACTION_WATCH_BASE_STATUSLINE` | (empty) | Path to a prior statusline to chain. If empty, a minimal one is used (model + folder). |
+| `COMPACTION_WATCH_RETENTION_DAYS` | `7` | Days that the counters of old sessions are kept before purging them. |
+| `COMPACTION_WATCH_DEBUG` | `0` | If `1`, dumps the raw stdin of each hook to `~/.claude/state/compaction-watch/raw.log` to verify the JSON field names. |
 
-Ejemplo:
+Example:
 
 ```json
 { "env": { "COMPACTION_WATCH_THRESHOLD": "10" } }
 ```
 
-### Por que 10 por defecto
+### Why 10 by default
 
-La compactacion es lossy y encadenada: el contenido antiguo sobrevive a tantas
-rondas de resumen como compactaciones haya. A las ~10 compactaciones el contexto
-temprano es practicamente inexistente, asi que 10 funciona como "stop de
-emergencia". En frecuencia, ~10 compactaciones equivalen a varias horas de sesion
-intensa continua, un punto razonable para sugerir refresco. Como tu estado
-durable ya se externaliza a `CLAUDE.md`/`memory/`, puedes tolerar un umbral algo
-mas alto (sube a 15 si el aviso molesta por aparecer pronto).
+Compaction is lossy and chained: old content survives as many rounds of
+summarization as there are compactions. At ~10 compactions the early context is
+practically nonexistent, so 10 works as an "emergency stop". In terms of
+frequency, ~10 compactions amount to several hours of continuous intense session,
+a reasonable point to suggest a refresh. Since your durable state is already
+externalized to `CLAUDE.md`/`memory/`, you can tolerate a slightly higher
+threshold (raise it to 15 if the warning bothers you by appearing too soon).
 
-**Limite de la heuristica:** contar compactaciones no es medir calidad real. Una
-sesion puede compactar poco y estar danada, o compactar mucho en trabajo lineal y
-estar bien. Se acepta ese error a cambio de simplicidad y determinismo.
+**Heuristic limit:** counting compactions is not measuring real quality. A
+session may compact little and be damaged, or compact a lot in linear work and be
+fine. That error is accepted in exchange for simplicity and determinism.
 
-## Como funciona
+## How it works
 
 ```
-PreCompact (cada compactacion)  -> bin/count.sh
-    incrementa ~/.claude/state/compaction-watch/<session_id>.count
+PreCompact (each compaction)    -> bin/count.sh
+    increments ~/.claude/state/compaction-watch/<session_id>.count
 
-Statusline (cada render)        -> ~/.claude/scripts/compaction-watch/statusline.sh
-    lee el contador del session_id y compone base + sufijo
+Statusline (each render)        -> ~/.claude/scripts/compaction-watch/statusline.sh
+    reads the session_id counter and composes base + suffix
 
-SessionStart (cada arranque)    -> bin/prune.sh
-    copia statusline.sh a la ruta estable y purga contadores viejos
+SessionStart (each startup)     -> bin/prune.sh
+    copies statusline.sh to the stable path and purges old counters
 ```
 
-- **Reset gratis por sesion nueva.** El `session_id` es estable dentro de una
-  sesion (incluida la compactacion) y cambia al abrir una nueva: sesion nueva =
-  contador a 0, sin intervencion.
-- **`--resume` / `--continue`** reutilizan el `session_id`, asi que el contador
-  persiste (sigues en la sesion degradada, que es lo correcto).
-- **Multiproyecto / sesiones en paralelo:** cada `session_id` tiene su contador;
-  no se mezclan.
+- **Free reset per new session.** The `session_id` is stable within a session
+  (including compaction) and changes when you open a new one: new session =
+  counter at 0, no intervention.
+- **`--resume` / `--continue`** reuse the `session_id`, so the counter persists
+  (you are still in the degraded session, which is correct).
+- **Multi-project / parallel sessions:** each `session_id` has its own counter;
+  they do not mix.
 
-## Verificar los nombres de campo del JSON
+## Verify the JSON field names
 
-Los esquemas de los JSON de hooks/statusline pueden variar por version de Claude
-Code. Antes de confiar ciegamente en el parseo, pon `COMPACTION_WATCH_DEBUG=1`,
-provoca una compactacion y un render, y revisa
-`~/.claude/state/compaction-watch/raw.log` para confirmar `session_id`, `trigger`,
-`model.display_name` y `workspace.current_dir`. Quita la variable cuando termines.
+The schemas of the hook/statusline JSON may vary by Claude Code version. Before
+trusting the parsing blindly, set `COMPACTION_WATCH_DEBUG=1`, trigger a
+compaction and a render, and check
+`~/.claude/state/compaction-watch/raw.log` to confirm `session_id`, `trigger`,
+`model.display_name` and `workspace.current_dir`. Remove the variable when you
+are done.
 
-## Gestion (skill)
+## Management (skill)
 
-El plugin incluye un skill `compaction-watch` para peticiones como "cuantas
-compactaciones llevo", "cambia el umbral a 15" o "resetea el contador". Solo
-lee/escribe el estado bajo `~/.claude/state/compaction-watch/` y el bloque `env`
-de tu `settings.json`.
+The plugin includes a `compaction-watch` skill for requests like "how many
+compactions have I had", "change the threshold to 15" or "reset the counter". It
+only reads/writes the state under `~/.claude/state/compaction-watch/` and the
+`env` block of your `settings.json`.
 
-## Pruebas
+## Tests
 
 ```bash
 bash tests/run.sh
 bash tests/install_test.sh
 ```
 
-Cubren el incremento del contador, `AUTO_ONLY`, contadores corruptos, los tres
-estados del statusline, umbral configurable, encadenado de statusline, la copia a
-la ruta estable, la purga por antiguedad y la idempotencia / preservacion del
-`statusLine` previo en `install.sh`.
+They cover the counter increment, `AUTO_ONLY`, corrupt counters, the three
+statusline states, configurable threshold, statusline chaining, the copy to the
+stable path, purging by age, and the idempotency / preservation of a pre-existing
+`statusLine` in `install.sh`.
 
-## Seguridad / privacidad
+## Security / privacy
 
-- Todo el estado es local. Ningun dato sale de la maquina. Cero red, cero
-  telemetria.
-- `COMPACTION_WATCH_BASE_STATUSLINE` ejecuta un comando definido por ti:
-  tratalo como confianza del usuario.
-- Todos los scripts salen con codigo 0 siempre: un hook que falle nunca bloquea
-  ni la compactacion ni el render del statusline.
+- All state is local. No data leaves the machine. Zero network, zero
+  telemetry.
+- `COMPACTION_WATCH_BASE_STATUSLINE` runs a command defined by you:
+  treat it as user trust.
+- Every script always exits with code 0: a failing hook never blocks
+  the compaction or the statusline render.
 
 ## No-goals
 
-No mide calidad real, no escribe `CLAUDE.md` ni `memory/`, no inyecta mensajes al
-LLM, no detecta el % de contexto en vivo (hoy imposible con hooks), no levanta
-servidores y no intenta recuperar lo perdido en una compactacion.
+It does not measure real quality, does not write `CLAUDE.md` or `memory/`, does
+not inject messages to the LLM, does not detect the live context % (impossible
+today with hooks), does not bring up servers and does not try to recover what was
+lost in a compaction.
 
-## Licencia
+## License
 
-MIT. Ver [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).

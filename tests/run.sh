@@ -115,7 +115,7 @@ printf '10\n' > "$(state_dir "$H")/sess-A.count"
 out="$(run_statusline "$H" "$SL_JSON")"
 assert_contains "statusline.sh: at default threshold shows warning" "$out" "⚠️"
 assert_contains "statusline.sh: warning includes count" "$out" "10"
-assert_contains "statusline.sh: warning includes recommendation" "$out" "nueva sesión recomendada"
+assert_contains "statusline.sh: warning includes recommendation" "$out" "new session recommended"
 
 printf '2\n' > "$(state_dir "$H")/sess-A.count"
 out="$(run_statusline "$H" "$SL_JSON" COMPACTION_WATCH_THRESHOLD=2)"

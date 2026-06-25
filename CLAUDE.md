@@ -10,7 +10,7 @@ telemetry. All state is small files under `~/.claude/state/compaction-watch/`.
 - `plugins/compaction-watch/bin/count.sh` — `PreCompact` hook; increments
   `<session_id>.count`.
 - `plugins/compaction-watch/bin/statusline.sh` — statusLine command; prints base
-  line + suffix (`⟳N` below threshold, `⚠️ ... nueva sesión recomendada` at/above).
+  line + suffix (`⟳N` below threshold, `⚠️ ... new session recommended` at/above).
 - `plugins/compaction-watch/bin/prune.sh` — `SessionStart` hook; copies
   statusline.sh to the stable path `~/.claude/scripts/compaction-watch/` and
   purges old counters.

@@ -19,13 +19,13 @@ cp -f "${SRC_BIN}/statusline.sh" "$STATUSLINE"
 cp -f "${SRC_BIN}/prune.sh" "$PRUNE"
 chmod +x "$COUNT" "$STATUSLINE" "$PRUNE"
 
-printf 'Scripts copiados en: %s\n' "$SCRIPTS_DIR"
+printf 'Scripts copied to: %s\n' "$SCRIPTS_DIR"
 
 print_manual_block() {
   cat <<EOF
 
-jq no esta disponible. Anade manualmente este contenido a ${SETTINGS}
-(fusionalo con lo que ya tengas; no reemplaces el fichero entero):
+jq is not available. Add the following content manually to ${SETTINGS}
+(merge it with what you already have; do not replace the whole file):
 
 {
   "statusLine": {
@@ -42,8 +42,8 @@ jq no esta disponible. Anade manualmente este contenido a ${SETTINGS}
   }
 }
 
-Si ya tienes un statusLine, NO lo sobrescribas: conserva el tuyo y exporta
-COMPACTION_WATCH_BASE_STATUSLINE apuntando a el para encadenarlo.
+If you already have a statusLine, do NOT overwrite it: keep yours and export
+COMPACTION_WATCH_BASE_STATUSLINE pointing at it to chain it.
 EOF
 }
 
@@ -57,7 +57,7 @@ if [ ! -f "$SETTINGS" ]; then
 fi
 
 if ! jq -e . "$SETTINGS" >/dev/null 2>&1; then
-  printf 'AVISO: %s no es JSON valido. No se ha modificado.\n' "$SETTINGS"
+  printf 'WARNING: %s is not valid JSON. It was not modified.\n' "$SETTINGS"
   print_manual_block
   exit 0
 fi
@@ -88,18 +88,18 @@ jq \
 cp -f "$SETTINGS" "${SETTINGS}.bak"
 mv -f "$tmp" "$SETTINGS"
 
-printf 'settings.json actualizado (copia previa en %s.bak).\n' "$SETTINGS"
+printf 'settings.json updated (previous copy at %s.bak).\n' "$SETTINGS"
 printf '  hook PreCompact   -> %s\n' "$COUNT"
 printf '  hook SessionStart -> %s\n' "$PRUNE"
 
 if [ -n "$prev_statusline" ] && [ "$prev_statusline" != "$STATUSLINE" ]; then
   cat <<EOF
 
-NOTA: ya tenias un statusLine configurado y se ha CONSERVADO:
+NOTE: you already had a statusLine configured and it was PRESERVED:
   ${prev_statusline}
 
-Para encadenarlo con el aviso de compactaciones, edita el statusLine para que
-apunte a compaction-watch y exporta tu statusLine previo como base:
+To chain it with the compaction warning, edit the statusLine to point at
+compaction-watch and export your previous statusLine as the base:
 
   "statusLine": { "type": "command", "command": "${STATUSLINE}" }
   "env": { "COMPACTION_WATCH_BASE_STATUSLINE": "${prev_statusline}" }
@@ -108,5 +108,5 @@ else
   printf '  statusLine        -> %s\n' "$STATUSLINE"
 fi
 
-printf '\nListo. Abre una sesion nueva para que los hooks y el statusline carguen.\n'
+printf '\nDone. Open a fresh session so the hooks and statusline load.\n'
 exit 0

@@ -1,7 +1,7 @@
 {
   "name": "compaction-watch",
   "version": "0.1.0",
-  "description": "Cuenta las compactaciones de la sesion actual y avisa en el statusline cuando se supera un umbral, para recordar abrir una sesion nueva antes de que la perdida acumulada por compactaciones degrade la calidad.",
+  "description": "Counts compactions in the current session and warns in the statusline when a threshold is exceeded, to remind you to open a fresh session before accumulated lossy compaction degrades quality.",
   "author": {
     "name": "Julian Gomez"
   },

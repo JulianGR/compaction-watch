@@ -7,7 +7,7 @@
     {
       "name": "compaction-watch",
       "source": "./plugins/compaction-watch",
-      "description": "Cuenta las compactaciones de la sesion y avisa en el statusline al superar un umbral."
+      "description": "Counts session compactions and warns in the statusline past a threshold."
     }
   ]
 }

@@ -29,7 +29,7 @@ fi
 base=${base%$'\n'}
 
 if [ "$count" -ge "$threshold" ]; then
-  printf '%s  ⚠️ %s compactaciones · nueva sesión recomendada\n' "$base" "$count"
+  printf '%s  ⚠️ %s compactions · new session recommended\n' "$base" "$count"
 elif [ "$count" -gt 0 ]; then
   printf '%s  ⟳%s\n' "$base" "$count"
 else
