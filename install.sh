@@ -11,13 +11,15 @@ SETTINGS="${HOME}/.claude/settings.json"
 COUNT="${SCRIPTS_DIR}/count.sh"
 STATUSLINE="${SCRIPTS_DIR}/statusline.sh"
 PRUNE="${SCRIPTS_DIR}/prune.sh"
+NOTIFY="${SCRIPTS_DIR}/notify.sh"
 
 mkdir -p "$SCRIPTS_DIR" "$STATE_DIR" "$(dirname "$SETTINGS")"
 
 cp -f "${SRC_BIN}/count.sh" "$COUNT"
 cp -f "${SRC_BIN}/statusline.sh" "$STATUSLINE"
 cp -f "${SRC_BIN}/prune.sh" "$PRUNE"
-chmod +x "$COUNT" "$STATUSLINE" "$PRUNE"
+cp -f "${SRC_BIN}/notify.sh" "$NOTIFY"
+chmod +x "$COUNT" "$STATUSLINE" "$PRUNE" "$NOTIFY"
 
 printf 'Scripts copied to: %s\n' "$SCRIPTS_DIR"
 
@@ -38,6 +40,9 @@ jq is not available. Add the following content manually to ${SETTINGS}
     ],
     "SessionStart": [
       { "matcher": "", "hooks": [ { "type": "command", "command": "${PRUNE}" } ] }
+    ],
+    "UserPromptSubmit": [
+      { "matcher": "", "hooks": [ { "type": "command", "command": "${NOTIFY}" } ] }
     ]
   }
 }
@@ -68,6 +73,7 @@ tmp="$(mktemp "${TMPDIR:-/tmp}/cw-settings.XXXXXX")"
 jq \
   --arg count "$COUNT" \
   --arg prune "$PRUNE" \
+  --arg notify "$NOTIFY" \
   --arg statusline "$STATUSLINE" \
   '
   .hooks = (.hooks // {})
@@ -79,6 +85,10 @@ jq \
       ((.hooks.SessionStart // []) | map(select((any(.hooks[]?; .command == $prune)) | not)))
       + [ { matcher: "", hooks: [ { type: "command", command: $prune } ] } ]
     )
+  | .hooks.UserPromptSubmit = (
+      ((.hooks.UserPromptSubmit // []) | map(select((any(.hooks[]?; .command == $notify)) | not)))
+      + [ { matcher: "", hooks: [ { type: "command", command: $notify } ] } ]
+    )
   | (if (.statusLine != null) and ((.statusLine.command // "") != $statusline)
      then .
      else .statusLine = { type: "command", command: $statusline }
@@ -89,8 +99,9 @@ cp -f "$SETTINGS" "${SETTINGS}.bak"
 mv -f "$tmp" "$SETTINGS"
 
 printf 'settings.json updated (previous copy at %s.bak).\n' "$SETTINGS"
-printf '  hook PreCompact   -> %s\n' "$COUNT"
-printf '  hook SessionStart -> %s\n' "$PRUNE"
+printf '  hook PreCompact      -> %s\n' "$COUNT"
+printf '  hook SessionStart    -> %s\n' "$PRUNE"
+printf '  hook UserPromptSubmit -> %s\n' "$NOTIFY"
 
 if [ -n "$prev_statusline" ] && [ "$prev_statusline" != "$STATUSLINE" ]; then
   cat <<EOF

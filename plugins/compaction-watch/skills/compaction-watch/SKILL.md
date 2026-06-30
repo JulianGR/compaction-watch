@@ -11,6 +11,8 @@ Code compactions that warns in the statusline past a threshold (default 10).
 State lives in `~/.claude/state/compaction-watch/`:
 - `<session_id>.count` — the integer count for that session.
 - `<session_id>.log` — optional `epoch trigger` lines, one per compaction.
+- `<session_id>.notified` — in-chat reminder dedup state (`level lastmsg`).
+- `<session_id>.msgcount` — per-session message tally for the reminder cadence.
 - `raw.log` — only present when `COMPACTION_WATCH_DEBUG=1`.
 
 Only touch the files above and the `env` block of `~/.claude/settings.json`.
@@ -61,6 +63,8 @@ Changes to `settings.json` take effect in a new session.
 
 ## Related env vars
 
+`COMPACTION_WATCH_PREWARN_THRESHOLD` (in-chat pre-warning level, default 5),
+`COMPACTION_WATCH_REMIND_EVERY` (repeat the in-chat reminder every N messages, default 5),
 `COMPACTION_WATCH_AUTO_ONLY` (count only auto compactions),
 `COMPACTION_WATCH_BASE_STATUSLINE` (chain a prior statusline),
 `COMPACTION_WATCH_RETENTION_DAYS` (how long old counters are kept),

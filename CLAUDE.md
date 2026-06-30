@@ -14,7 +14,12 @@ telemetry. All state is small files under `~/.claude/state/compaction-watch/`.
 - `plugins/compaction-watch/bin/prune.sh` — `SessionStart` hook; copies
   statusline.sh to the stable path `~/.claude/scripts/compaction-watch/` and
   purges old counters.
-- `plugins/compaction-watch/hooks/hooks.json` — registers PreCompact + SessionStart.
+- `plugins/compaction-watch/bin/notify.sh` — `UserPromptSubmit` hook; prints an
+  in-chat reminder (to stdout, injected as context) when the count crosses the
+  pre-warn (5) or full (10) threshold, repeating every `REMIND_EVERY` messages.
+  Dedup state in `<session_id>.notified`, message tally in `<session_id>.msgcount`.
+- `plugins/compaction-watch/hooks/hooks.json` — registers PreCompact + SessionStart
+  + UserPromptSubmit.
 - `plugins/compaction-watch/.claude-plugin/plugin.json` — plugin manifest.
 - `plugins/compaction-watch/skills/compaction-watch/SKILL.md` — management skill.
 - `.claude-plugin/marketplace.json` — marketplace manifest.
@@ -48,6 +53,7 @@ with simulated hook JSON on stdin.
 
 ## Env vars
 
-`COMPACTION_WATCH_THRESHOLD` (10), `COMPACTION_WATCH_AUTO_ONLY` (0),
+`COMPACTION_WATCH_THRESHOLD` (10), `COMPACTION_WATCH_PREWARN_THRESHOLD` (5),
+`COMPACTION_WATCH_REMIND_EVERY` (5), `COMPACTION_WATCH_AUTO_ONLY` (0),
 `COMPACTION_WATCH_BASE_STATUSLINE` (empty), `COMPACTION_WATCH_RETENTION_DAYS` (7),
 `COMPACTION_WATCH_DEBUG` (0).

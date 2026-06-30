@@ -15,6 +15,14 @@
           { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/prune.sh" }
         ]
       }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          { "type": "command", "command": "${CLAUDE_PLUGIN_ROOT}/bin/notify.sh" }
+        ]
+      }
     ]
   }
 }

@@ -27,6 +27,23 @@ Opus  my-project  ⚠️ 10 compactions · new session recommended
 - `⟳N` appears from the first compaction (ambient reminder).
 - `⚠️ ...` is the strong warning when the threshold is reached (default 10).
 
+## In-chat notifications
+
+The statusline is a terminal feature and does not render in the Claude Code
+desktop GUI. So compaction-watch also delivers the warning **as a chat message**,
+which works everywhere hooks run (including the desktop app).
+
+A `UserPromptSubmit` hook (`notify.sh`) checks the counter on each message you
+send. When the count crosses the **pre-warning** (default 5) or **full** (default
+10) threshold, it prints a short note that the assistant relays to you in chat,
+and then repeats it every `COMPACTION_WATCH_REMIND_EVERY` messages (default 5)
+while you remain above that threshold. Each threshold also fires immediately the
+first time it is crossed.
+
+This is best-effort by timing: the note appears on your **next message** after the
+threshold is crossed, not at the exact moment of compaction. Dedup state lives in
+`<session_id>.notified` and the per-session message tally in `<session_id>.msgcount`.
+
 ## Installation
 
 There are two methods. The statusline **always** requires a `statusLine` entry in
@@ -80,7 +97,9 @@ Environment variables (set them in the `env` block of `~/.claude/settings.json`)
 
 | Variable | Default | Effect |
 | --- | --- | --- |
-| `COMPACTION_WATCH_THRESHOLD` | `10` | Number of compactions from which the ⚠️ warning is shown. Sensible range 8-15; do not go past 20. |
+| `COMPACTION_WATCH_THRESHOLD` | `10` | Number of compactions from which the ⚠️ (full) warning is shown, in the statusline and in chat. Sensible range 8-15; do not go past 20. |
+| `COMPACTION_WATCH_PREWARN_THRESHOLD` | `5` | Compactions at which the in-chat **pre-warning** fires. |
+| `COMPACTION_WATCH_REMIND_EVERY` | `5` | While at/above a threshold, the in-chat reminder repeats every N of your messages. |
 | `COMPACTION_WATCH_AUTO_ONLY` | `0` | If `1`, ignores manual `/compact` calls and only counts automatic ones. |
 | `COMPACTION_WATCH_BASE_STATUSLINE` | (empty) | Path to a prior statusline to chain. If empty, a minimal one is used (model + folder). |
 | `COMPACTION_WATCH_RETENTION_DAYS` | `7` | Days that the counters of old sessions are kept before purging them. |
@@ -117,6 +136,10 @@ Statusline (each render)        -> ~/.claude/scripts/compaction-watch/statusline
 
 SessionStart (each startup)     -> bin/prune.sh
     copies statusline.sh to the stable path and purges old counters
+
+UserPromptSubmit (each message) -> bin/notify.sh
+    when the count crosses 5 (pre) or 10 (full), prints a reminder the assistant
+    relays to you in chat; repeats every REMIND_EVERY messages
 ```
 
 - **Free reset per new session.** The `session_id` is stable within a session

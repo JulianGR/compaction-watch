@@ -34,6 +34,10 @@ run_statusline() {
   local home="$1" json="$2"; shift 2
   printf '%s' "$json" | env HOME="$home" "$@" bash "${BIN}/statusline.sh"
 }
+run_notify() {
+  local home="$1" json="$2"; shift 2
+  printf '%s' "$json" | env HOME="$home" "$@" bash "${BIN}/notify.sh"
+}
 
 state_dir() { printf '%s/.claude/state/compaction-watch' "$1"; }
 
@@ -138,6 +142,60 @@ assert_contains "statusline.sh: chained base still appends counter" "$out" "⟳4
 H="$(new_home)"
 printf '%s' "$SL_JSON" | env HOME="$H" bash "${BIN}/statusline.sh" >/dev/null
 assert_eq "statusline.sh: exits 0" "$?" "0"
+
+# ---------------------------------------------------------------------------
+# notify.sh
+# ---------------------------------------------------------------------------
+NJSON='{"session_id":"sess-N"}'
+
+H="$(new_home)"
+mkdir -p "$(state_dir "$H")"
+printf '4\n' > "$(state_dir "$H")/sess-N.count"
+out="$(run_notify "$H" "$NJSON")"
+assert_eq "notify.sh: silent below pre-threshold" "$out" ""
+
+H="$(new_home)"
+mkdir -p "$(state_dir "$H")"
+printf '5\n' > "$(state_dir "$H")/sess-N.count"
+out="$(run_notify "$H" "$NJSON")"
+assert_contains "notify.sh: fires pre-warning at 5" "$out" "pre-warning"
+assert_contains "notify.sh: pre-warning reports count" "$out" "5 compactions"
+out="$(run_notify "$H" "$NJSON")"
+assert_eq "notify.sh: pre-warning does not repeat next message" "$out" ""
+for _ in 1 2 3 4; do out="$(run_notify "$H" "$NJSON")"; done
+assert_contains "notify.sh: pre-warning repeats after 5 messages" "$out" "pre-warning"
+
+H="$(new_home)"
+mkdir -p "$(state_dir "$H")"
+printf '10\n' > "$(state_dir "$H")/sess-N.count"
+out="$(run_notify "$H" "$NJSON")"
+assert_contains "notify.sh: fires full warning at 10" "$out" "fresh session"
+assert_contains "notify.sh: full warning reports count" "$out" "10 compactions"
+
+H="$(new_home)"
+mkdir -p "$(state_dir "$H")"
+printf '6\n' > "$(state_dir "$H")/sess-N.count"
+out="$(run_notify "$H" "$NJSON")"
+assert_contains "notify.sh: pre fires when crossing 5" "$out" "pre-warning"
+printf '10\n' > "$(state_dir "$H")/sess-N.count"
+out="$(run_notify "$H" "$NJSON")"
+assert_contains "notify.sh: escalates to full when crossing 10" "$out" "fresh session"
+
+H="$(new_home)"
+mkdir -p "$(state_dir "$H")"
+printf '3\n' > "$(state_dir "$H")/sess-N.count"
+out="$(run_notify "$H" "$NJSON" COMPACTION_WATCH_PREWARN_THRESHOLD=3)"
+assert_contains "notify.sh: respects custom pre-threshold" "$out" "pre-warning"
+
+H="$(new_home)"
+mkdir -p "$(state_dir "$H")"
+printf '4\n' > "$(state_dir "$H")/sess-N.count"
+out="$(run_notify "$H" "$NJSON" COMPACTION_WATCH_THRESHOLD=4 COMPACTION_WATCH_PREWARN_THRESHOLD=2)"
+assert_contains "notify.sh: respects custom full threshold" "$out" "fresh session"
+
+H="$(new_home)"
+printf '%s' "$NJSON" | env HOME="$H" bash "${BIN}/notify.sh" >/dev/null
+assert_eq "notify.sh: exits 0" "$?" "0"
 
 # ---------------------------------------------------------------------------
 # prune.sh
