@@ -10,7 +10,14 @@ function command(adapter) {
   return adapter.hooks[0].command
 }
 
-test('the root manifests package compaction-watch from the repository root', async () => {
+test('the installed root includes the Node runtime and all host manifests', async () => {
+  await Promise.all([
+    access(new URL('../bin/compaction-watch.mjs', import.meta.url)),
+    access(new URL('../lib/compaction-watch.mjs', import.meta.url)),
+    access(new URL('../.claude-plugin/plugin.json', import.meta.url)),
+    access(new URL('../.codex-plugin/plugin.json', import.meta.url)),
+    access(new URL('../kimi.plugin.json', import.meta.url))
+  ])
   const [claudeMarketplace, claude, codex, codexMarketplace, kimi] = await Promise.all([
     manifest('../.claude-plugin/marketplace.json'),
     manifest('../.claude-plugin/plugin.json'),

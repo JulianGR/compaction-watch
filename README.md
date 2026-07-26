@@ -2,23 +2,47 @@
 
 `compaction-watch` records automatic context compactions locally and alerts you when a session is becoming too long. It supports Codex Desktop, Claude Desktop and Claude Code, and Kimi CLI. Kimi VS Code support is experimental. ChatGPT Web is out of scope.
 
-At 5 automatic compactions it raises a soft alert. At 10 it raises a strong alert recommending a fresh session. Each threshold produces an immediate best-effort OS alert. The next user prompt receives an in-chat reminder, which repeats every 5 prompts by default while the threshold remains active.
+The `PreCompact` hook counts automatic compactions. At 5 automatic compactions it raises a soft alert. At 10 it raises a strong alert recommending a fresh session. Each threshold attempts an immediate best-effort OS alert. The next user prompt receives an in-chat reminder, which repeats every 5 prompts by default while the threshold remains active. These prompt repeats only read local state: they never increment the compaction count or modify project files.
 
 The Node core counts automatic compactions only by default. Set `COMPACTION_WATCH_INCLUDE_MANUAL=1` to include manual compactions. State is stored only on the local machine under `~/.agent-compaction-watch`; there is no telemetry or network service. Session history is intentionally retained for correctness.
 
 ## Install
 
-### Claude Desktop and Claude Code
+### Claude Code
 
-Add this repository as a Claude marketplace, then install `compaction-watch`. The marketplace entry points to the repository root, so the installed plugin contains `bin/compaction-watch.mjs` and `lib/compaction-watch.mjs`.
+Add this repository as a Claude marketplace, then install `compaction-watch`:
 
-### Codex Desktop
+```text
+/plugin marketplace add JulianGR/compaction-watch
+/plugin install compaction-watch@compaction-watch
+```
 
-Add this repository's `.agents/plugins/marketplace.json` as a Codex marketplace, then install `compaction-watch`. Codex discovers its adapters from `hooks/hooks.json`.
+The marketplace entry points to the repository root, so the installed plugin contains `bin/compaction-watch.mjs` and `lib/compaction-watch.mjs`.
+
+### Claude Desktop
+
+Use Claude Desktop's local Code/plugin UI when it is available to add the
+`JulianGR/compaction-watch` marketplace and install `compaction-watch`. The
+Claude Code slash commands above are for Claude Code sessions, not a claim that
+Claude Desktop is a CLI wrapper.
+
+### Codex
+
+```text
+codex plugin marketplace add JulianGR/compaction-watch
+codex plugin add compaction-watch@compaction-watch
+```
+
+Codex discovers its adapters from `hooks/hooks.json`.
 
 ### Kimi CLI
 
-Install this repository with Kimi's `/plugins install` flow, enable `compaction-watch`, then run `/reload`. Kimi copies the managed plugin and executes its hooks from that plugin root.
+```text
+/plugins install https://github.com/JulianGR/compaction-watch
+/reload
+```
+
+Kimi Code VS Code support is experimental and has not been verified.
 
 ## Diagnose
 
