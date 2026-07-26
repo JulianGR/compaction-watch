@@ -1,0 +1,15 @@
+{
+  "name": "compaction-watch",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "compaction-watch": "bin/compaction-watch.mjs"
+  },
+  "scripts": {
+    "test": "node --test tests/compaction-watch.test.mjs"
+  }
+}
