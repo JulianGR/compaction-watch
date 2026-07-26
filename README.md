@@ -21,10 +21,11 @@ The marketplace entry points to the repository root, so the installed plugin con
 
 ### Claude Desktop
 
-Use Claude Desktop's local Code/plugin UI when it is available to add the
-`JulianGR/compaction-watch` marketplace and install `compaction-watch`. The
-Claude Code slash commands above are for Claude Code sessions, not a claim that
-Claude Desktop is a CLI wrapper.
+First, use the Claude Code slash commands above to add the marketplace and
+install `compaction-watch`. Then Claude Desktop can enable or install it when
+it appears from that already-configured marketplace. If the marketplace cannot
+be configured through Claude Code, the plugin hooks cannot be installed in
+Desktop-only mode.
 
 ### Codex
 
