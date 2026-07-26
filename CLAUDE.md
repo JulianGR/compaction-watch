@@ -9,4 +9,4 @@ This repository root is the plugin root for Claude, Codex, and Kimi. The runtime
 
 Keep host adapters separate. Do not add shell scripts, statuslines, jq installers, or a `hooks` field to `.codex-plugin/plugin.json`. Keep output plain injected context for Claude and Kimi, and Codex system-message JSON. The Node core owns native OS notifications.
 
-Run `npm test` and `python C:\Users\jules\.codex\skills\.system\plugin-creator\scripts\validate_plugin.py .` before changing plugin packaging. Session history is intentionally retained for correctness.
+Run `npm test` and, when available, the Codex plugin validator supplied by installed plugin developer tooling before changing plugin packaging. Session history is intentionally retained for correctness.

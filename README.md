@@ -28,6 +28,8 @@ From the plugin root, run:
 
 Use `claude`, `codex`, or `kimi` for `<host>`. This prints the local status JSON for the supplied hook payload. In a host session the lifecycle adapters provide that payload automatically.
 
+For a useful per-session standalone diagnostic, provide hook JSON on standard input with both `cwd` and `session_id`. Without that payload, `status` uses a synthetic `unknown` session and reports its local count, which is normally zero.
+
 ## Configuration
 
 | Variable | Default | Meaning |
@@ -39,7 +41,7 @@ Use `claude`, `codex`, or `kimi` for `<host>`. This prints the local status JSON
 
 ## Development
 
-Run all Node tests with `npm test`. Validate the Codex plugin with `python C:\Users\jules\.codex\skills\.system\plugin-creator\scripts\validate_plugin.py .` on Windows.
+Run all Node tests with `npm test`. When available, validate the Codex plugin with the validator supplied by installed Codex plugin developer tooling.
 
 ## License
 

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
+import { access, readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 async function manifest(path) {
@@ -27,6 +27,16 @@ test('the root manifests package compaction-watch from the repository root', asy
   assert.equal(codex.name, 'compaction-watch')
   assert.equal(kimi.name, 'compaction-watch')
   assert.equal('hooks' in codex, false)
+})
+
+test('the repository has no nested package or machine-local packaging instructions', async () => {
+  const [readme, claude] = await Promise.all([
+    readFile(new URL('../README.md', import.meta.url), 'utf8'),
+    readFile(new URL('../CLAUDE.md', import.meta.url), 'utf8')
+  ])
+  await assert.rejects(access(new URL('../plugins/compaction-watch/.claude-plugin/plugin.json', import.meta.url)))
+  assert.doesNotMatch(`${readme}\n${claude}`, /C:\\Users\\jules/)
+  assert.match(readme, /hook JSON.*cwd.*session_id/is)
 })
 
 test('Claude declares every lifecycle adapter inline', async () => {
