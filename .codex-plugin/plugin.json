@@ -1,0 +1,20 @@
+{
+  "name": "compaction-watch",
+  "version": "1.0.0",
+  "description": "Counts automatic session compactions and provides local alerts.",
+  "author": {
+    "name": "Julian Gomez"
+  },
+  "license": "MIT",
+  "keywords": ["compaction", "context", "alerts"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Compaction Watch",
+    "shortDescription": "Local compaction alerts",
+    "longDescription": "Tracks automatic compactions locally and reminds you to start a fresh session at configurable thresholds.",
+    "developerName": "Julian Gomez",
+    "category": "Productivity",
+    "capabilities": ["Interactive"],
+    "defaultPrompt": ["Show the compaction-watch status for this session."]
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "name": "compaction-watch",
+  "version": "1.0.0",
+  "description": "Counts automatic session compactions and provides local alerts.",
+  "author": {
+    "name": "Julian Gomez"
+  },
+  "license": "MIT",
+  "skills": "./skills/",
+  "hooks": {
+    "PreCompact": [
+      {
+        "matcher": "auto",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/bin/compaction-watch.mjs\" count --host claude",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "matcher": "auto",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/bin/compaction-watch.mjs\" notify --host claude",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/bin/compaction-watch.mjs\" notify --repeat --host claude",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/bin/compaction-watch.mjs\" prune --host claude",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

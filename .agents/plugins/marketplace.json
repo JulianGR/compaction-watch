@@ -1,0 +1,20 @@
+{
+  "name": "compaction-watch",
+  "interface": {
+    "displayName": "Compaction Watch"
+  },
+  "plugins": [
+    {
+      "name": "compaction-watch",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

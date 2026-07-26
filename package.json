@@ -10,6 +10,6 @@
     "compaction-watch": "bin/compaction-watch.mjs"
   },
   "scripts": {
-    "test": "node --test tests/compaction-watch.test.mjs"
+    "test": "node --test tests/*.test.mjs"
   }
 }

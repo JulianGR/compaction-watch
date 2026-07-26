@@ -1,59 +1,12 @@
 # compaction-watch
 
-Claude Code hooks plugin that counts per-session compactions and warns in the
-statusline past a threshold (default 10), to nudge starting a fresh session
-before accumulated lossy-compaction degrades quality. Pure shell, no network, no
-telemetry. All state is small files under `~/.claude/state/compaction-watch/`.
+This repository root is the plugin root for Claude, Codex, and Kimi. The runtime is Node 20+ in `bin/compaction-watch.mjs` and `lib/compaction-watch.mjs`.
 
-## Layout
+- Claude hooks are declared inline in `.claude-plugin/plugin.json` with `--host claude`.
+- Codex discovers `hooks/hooks.json` and uses `--host codex`.
+- Kimi declares hooks in `kimi.plugin.json` and uses `--host kimi`.
+- `PreCompact` records automatic compactions, `PostCompact` sends the immediate alert, `UserPromptSubmit` emits paced in-chat reminders, and `SessionStart` calls the non-destructive `prune()`.
 
-- `plugins/compaction-watch/bin/count.sh` — `PreCompact` hook; increments
-  `<session_id>.count`.
-- `plugins/compaction-watch/bin/statusline.sh` — statusLine command; prints base
-  line + suffix (`⟳N` below threshold, `⚠️ ... new session recommended` at/above).
-- `plugins/compaction-watch/bin/prune.sh` — `SessionStart` hook; copies
-  statusline.sh to the stable path `~/.claude/scripts/compaction-watch/` and
-  purges old counters.
-- `plugins/compaction-watch/bin/notify.sh` — `UserPromptSubmit` hook; prints an
-  in-chat reminder (to stdout, injected as context) when the count crosses the
-  pre-warn (5) or full (10) threshold, repeating every `REMIND_EVERY` messages.
-  Dedup state in `<session_id>.notified`, message tally in `<session_id>.msgcount`.
-- `plugins/compaction-watch/hooks/hooks.json` — registers PreCompact + SessionStart
-  + UserPromptSubmit.
-- `plugins/compaction-watch/.claude-plugin/plugin.json` — plugin manifest.
-- `plugins/compaction-watch/skills/compaction-watch/SKILL.md` — management skill.
-- `.claude-plugin/marketplace.json` — marketplace manifest.
-- `install.sh` — additive, idempotent installer (merges settings.json via jq).
-- `tests/run.sh`, `tests/install_test.sh` — dependency-free bash tests.
+Keep host adapters separate. Do not add shell scripts, statuslines, jq installers, or a `hooks` field to `.codex-plugin/plugin.json`. Keep output plain injected context for Claude and Kimi, and Codex system-message JSON. The Node core owns native OS notifications.
 
-## Test
-
-```bash
-bash tests/run.sh
-bash tests/install_test.sh
-```
-
-Tests isolate state by overriding `HOME` to a temp dir, then drive each script
-with simulated hook JSON on stdin.
-
-## Conventions (do not break)
-
-- Shell: `bash`, `set -euo pipefail`, no comments in scripts.
-- Every script exits 0 always — a failing hook must never block compaction or the
-  statusline render.
-- The `⚠️` / `⟳` characters appear only as statusline output data, never as code
-  decoration.
-- statusLine output is a single line.
-- No network, no telemetry. `grep -rIn "curl\|wget\|http" plugins/.../bin/` must be empty.
-- The statusLine entry cannot be declared by the plugin manifest — it must live in
-  `~/.claude/settings.json` pointing at the stable-path copy that `prune.sh` keeps
-  fresh on every SessionStart.
-- Verify hook/statusline JSON field names per Claude Code version before trusting
-  the `jq` parse: set `COMPACTION_WATCH_DEBUG=1` and inspect `raw.log`.
-
-## Env vars
-
-`COMPACTION_WATCH_THRESHOLD` (10), `COMPACTION_WATCH_PREWARN_THRESHOLD` (5),
-`COMPACTION_WATCH_REMIND_EVERY` (5), `COMPACTION_WATCH_AUTO_ONLY` (0),
-`COMPACTION_WATCH_BASE_STATUSLINE` (empty), `COMPACTION_WATCH_RETENTION_DAYS` (7),
-`COMPACTION_WATCH_DEBUG` (0).
+Run `npm test` and `python C:\Users\jules\.codex\skills\.system\plugin-creator\scripts\validate_plugin.py .` before changing plugin packaging. Session history is intentionally retained for correctness.
