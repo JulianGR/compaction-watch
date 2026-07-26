@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict'
-import { mkdtemp, readdir, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, rm, utimes, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { spawn } from 'node:child_process'
 import test from 'node:test'
-import { formatWarning, notificationCommand, readStatus, recordCompaction } from '../lib/compaction-watch.mjs'
+import { formatWarning, notificationCommand, prune, readStatus, recordCompaction } from '../lib/compaction-watch.mjs'
 
 async function makeStateDir() {
   return mkdtemp(join(tmpdir(), 'compaction-watch-'))
@@ -141,16 +141,57 @@ test('repeat reminders are paced by prompts and never increment the compaction c
   }
 })
 
-test('concurrent processes preserve every update', async () => {
+test('a repeat delivers an undelivered threshold alert without incrementing the count', async () => {
+  const stateDir = await makeStateDir()
+  const event = hook('repeat-fallback', '/project')
+  try {
+    for (let count = 0; count < 5; count++) await cli(['count', '--host', 'claude'], event, stateDir)
+    assert.match(await cli(['notify', '--repeat', '--host', 'claude'], event, stateDir), /5 compactions/)
+    assert.equal(await cli(['notify', '--repeat', '--host', 'claude'], event, stateDir), '')
+    assert.equal(JSON.parse(await cli(['status', '--host', 'claude'], event, stateDir)).count, 5)
+  } finally {
+    await rm(stateDir, { recursive: true, force: true })
+  }
+})
+
+test('a leftover legacy lock artifact does not block later counts', async () => {
+  const stateDir = await makeStateDir()
+  try {
+    await recordCompaction(hook('legacy-lock'), { stateDir })
+    const [entry] = await readdir(stateDir)
+    const key = entry.match(/^[a-f0-9]{64}/)?.[0]
+    await mkdir(join(stateDir, `${key}.json.lock`))
+    assert.equal((await recordCompaction(hook('legacy-lock'), { stateDir })).count, 2)
+  } finally {
+    await rm(stateDir, { recursive: true, force: true })
+  }
+})
+
+test('pruning retains every event for an active session', async () => {
+  const stateDir = await makeStateDir()
+  const event = hook('active-retention')
+  try {
+    for (let count = 0; count < 5; count++) await recordCompaction(event, { stateDir })
+    const old = new Date(Date.now() - 172800000)
+    for (const name of await readdir(stateDir)) await utimes(join(stateDir, name), old, old)
+    await recordCompaction(event, { stateDir })
+    assert.equal(await prune({ stateDir, env: { COMPACTION_WATCH_RETENTION_DAYS: '1' } }), 0)
+    assert.equal((await readStatus(event, { stateDir })).count, 6)
+  } finally {
+    await rm(stateDir, { recursive: true, force: true })
+  }
+})
+
+test('concurrent independent processes preserve every update', async () => {
   const stateDir = await makeStateDir()
   const moduleUrl = new URL('../lib/compaction-watch.mjs', import.meta.url).href
   try {
-    await Promise.all(Array.from({ length: 16 }, () => new Promise((resolve, reject) => {
-      const child = spawn(process.execPath, ['--input-type=module', '--eval', `import { recordCompaction } from ${JSON.stringify(moduleUrl)}; await recordCompaction({session_id:'parallel',cwd:'/project',trigger:'auto'},{stateDir:${JSON.stringify(stateDir)}})`])
+    await Promise.all(Array.from({ length: 40 }, () => new Promise((resolve, reject) => {
+      const child = spawn(process.execPath, ['--input-type=module', '--eval', `import { recordCompaction } from ${JSON.stringify(moduleUrl)}; await recordCompaction({session_id:'parallel',cwd:'/project',trigger:'auto'},{stateDir:${JSON.stringify(stateDir)},lockWaitMs:1})`])
       child.on('error', reject)
       child.on('exit', code => code === 0 ? resolve() : reject(new Error(`worker exited ${code}`)))
     })))
-    assert.equal((await readStatus(hook('parallel', '/project'), { stateDir })).count, 16)
+    assert.equal((await readStatus(hook('parallel', '/project'), { stateDir })).count, 40)
   } finally {
     await rm(stateDir, { recursive: true, force: true })
   }
