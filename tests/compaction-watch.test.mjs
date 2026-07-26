@@ -182,6 +182,26 @@ test('pruning retains every event for an active session', async () => {
   }
 })
 
+test('pruning preserves history while compactions are recorded', async () => {
+  const stateDir = await makeStateDir()
+  const event = hook('prune-race')
+  try {
+    await recordCompaction(event, { stateDir })
+    const [first] = await readdir(stateDir)
+    const key = first.match(/^[a-f0-9]{64}/)?.[0]
+    await Promise.all(Array.from({ length: 1000 }, (_, count) => writeFile(join(stateDir, `${key}.event.seed-${count}.json`), JSON.stringify({ trigger: 'auto' }))))
+    const old = new Date(Date.now() - 172800000)
+    for (const name of await readdir(stateDir)) await utimes(join(stateDir, name), old, old)
+    const pruning = prune({ stateDir, env: { COMPACTION_WATCH_RETENTION_DAYS: '1' } })
+    await new Promise(resolve => setTimeout(resolve, 20))
+    await Promise.all(Array.from({ length: 20 }, () => recordCompaction(event, { stateDir })))
+    assert.equal(await pruning, 0)
+    assert.equal((await readStatus(event, { stateDir })).count, 1021)
+  } finally {
+    await rm(stateDir, { recursive: true, force: true })
+  }
+})
+
 test('concurrent independent processes preserve every update', async () => {
   const stateDir = await makeStateDir()
   const moduleUrl = new URL('../lib/compaction-watch.mjs', import.meta.url).href
